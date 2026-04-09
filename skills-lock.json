@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-skills": {
+      "source": "datadog-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "20382c04cb55b2be4950197a1c81254851152c461473dd1104c6a87022de99d6"
+    }
+  }
+}
