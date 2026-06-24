@@ -211,3 +211,5 @@ augur_frontend/node_modules
 uv.lock
 data
 logs
+
+dashboard/node_modules

@@ -41,9 +41,9 @@ class CollectorManager:
     def run(self):
         # 创建浏览器实例
         from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
-        from langchain_community.tools.playwright.utils import create_sync_playwright_browser
-        sync_browser = create_sync_playwright_browser()
-        toolkit = PlayWrightBrowserToolkit.from_browser(sync_browser=sync_browser)
+        from langchain_community.tools.playwright.utils import create_async_playwright_browser
+        async_browser = create_async_playwright_browser()
+        toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser)
         tools = toolkit.get_tools()
 
         # prompt = ChatPromptTemplate.from_messages([
@@ -57,7 +57,7 @@ class CollectorManager:
 
         # 执行任务
         result = agent.invoke({
-            "messages": ["打开 https://news.ycombinator.com，截图，告诉我前3条新闻的标题"]
+            "messages": ["打开 https://www.baidu.com，截图，告诉我前3条新闻的标题"]
         })
         print(result["output"])
     def start(self):
