@@ -13,11 +13,11 @@ AI = ResearchAI()
 
 
 @click.group()
-def root():
+def app():
     pass
 
 
-@root.group()
+@app.group()
 def chromadb():
     """ChromaDB"""
 
@@ -44,7 +44,7 @@ def query(text: str):
     print(results)
 
 
-@root.group()
+@app.group()
 def ai():
     """AI"""
 
@@ -56,7 +56,7 @@ def query(text: str):
     asyncio.run(AI.query(text))
 
 
-@root.group()
+@app.group()
 def doc():
     """Docs manager"""
 
@@ -79,7 +79,7 @@ def ingest(source: str):
     click.secho("ingest success", fg="green")
 
 
-@root.command()
+@app.command()
 def master():
     """Start master server"""
 
@@ -87,4 +87,4 @@ def master():
 
 
 if __name__ == "__main__":
-    root()
+    app()

@@ -3,24 +3,41 @@ name = "deep-insight"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "chromadb>=1.5.9",
-    "click>=8.3.3",
-    "fastapi>=0.138.0",
-    "langchain>=1.2.18",
-    "langchain-chroma>=1.1.0",
-    "langchain-classic>=1.0.7",
-    "langchain-community>=0.4.1",
-    "langchain-openai>=1.2.1",
-    "loguru>=0.7.3",
+    # "click>=8.3.3",
+    # "fastapi>=0.138.0",
+    # "langchain>=1.2.18",
+    # "langchain-chroma>=1.1.0",
+    # "langchain-classic>=1.0.7",
+    # "langchain-community>=0.4.1",
+    # "langchain-openai>=1.2.1",
+    # "loguru>=0.7.3",
     "markitdown[all]>=0.1.5",
     "openai>=2.36.0",
     "openai-agents>=0.17.6",
-    "pydantic>=2.13.4",
+    # "pydantic>=2.13.4",
     "pypdf>=6.11.0",
-    "python-dotenv>=1.2.2",
     "rich>=15.0.0",
     "streamlit>=1.57.0",
     "uvicorn>=0.46.0",
+    "sqlmodel>=0.0.38",
+    "pystonic>=0.2.2",
+    "pystonic[orm]>=0.2.2",
+    "pystonic[fastapi]>=0.2.2",
+    "pystonic[rich]>=0.2.2",
 ]
+
+[tool.uv.sources]
+pystonic = { index = "testpypi" }
+
+[[tool.uv.index]]
+name = "tencent"
+url = "http://mirrors.cloud.tencent.com/pypi/simple"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
