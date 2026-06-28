@@ -9,8 +9,15 @@ class MasterManager:
     def list_docs(self):
         return SERVICE.list_docs()
 
-    async def llm_query(self, text: str):
-        await self.llm.query(text)
+    async def llm_query(self, text: str, project_id: str = None):
+        return await self.llm.query(text)
+
+    async def list_messages(self):
+        return await self.llm.query()
+
+    async def streaming_llm_query(self, text: str, session_id: str = None):
+        async for chunk in self.llm.streaming_query(text, session_id=session_id):
+            yield chunk
 
     def retrival(self, text: str):
         return SERVICE.query(text)

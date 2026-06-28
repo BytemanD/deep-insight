@@ -53,7 +53,7 @@ class Project(BaseSQLModel, table=True):
     description: str = Field(nullable=True)
 
 
-class Dialog(BaseSQLModel, table=True):
+class Session(BaseSQLModel, table=True):
     project_uuid: str = Field(nullable=False, index=True)
     name: str = Field(nullable=True)
 

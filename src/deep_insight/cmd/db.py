@@ -4,7 +4,7 @@ import click
 from pystonic.pretty import output
 
 from deep_insight.db import models
-from deep_insight.db.models import Dialog, Project
+from deep_insight.db.models import Project, Session
 
 
 @click.group()
@@ -46,13 +46,13 @@ def delete_dialog(uuid: str):
 
 @app.group()
 def dialog():
-    """Dialog manager"""
+    """Session manager"""
 
 
 @dialog.command("list")
 def list_dialog():
     """Project manager"""
-    items = Dialog.query()
+    items = Session.query()
     output.print_models(items)
 
 
@@ -63,7 +63,7 @@ def create_dialog(name: str, project: Optional[str]):
     db_project = Project.get_by_uuid(project)
     if not db_project:
         raise click.ClickException(f"Project {project} not found")
-    item = models.Dialog(project_uuid=project, name=name)
+    item = models.Session(project_uuid=project, name=name)
     item.create()
     output.print_model(item)
 
@@ -71,9 +71,9 @@ def create_dialog(name: str, project: Optional[str]):
 @dialog.command("delete")
 @click.argument("uuid")
 def delete_dialog(uuid: str):
-    db_dialog = Dialog.get_by_uuid(uuid)
+    db_dialog = Session.get_by_uuid(uuid)
     if not db_dialog:
-        raise click.ClickException(f"Dialog {uuid} not found")
+        raise click.ClickException(f"Session {uuid} not found")
 
     db_dialog.delete()
 

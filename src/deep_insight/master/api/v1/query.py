@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Header
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from deep_insight.common.context import project_id
@@ -11,15 +12,29 @@ class QueryRequest(BaseModel):
     text: str
 
 
-class QueryResponse(BaseModel):
-    answer: str
-
-
 @router.post("")
-async def query(req: QueryRequest, x_project_id: str = Header(None)):
-    token = project_id.set(x_project_id)
-    try:
-        answer = await MANAGER.llm_query(req.text, project_id=x_project_id)
-        return QueryResponse(answer=answer)
-    finally:
-        project_id.reset(token)
+async def query(
+    req: QueryRequest,
+    x_project_id: str = Header(None),
+    x_session_id: str = Header(None),
+):
+    async def event_stream():
+        token = project_id.set(x_project_id)
+        try:
+            async for chunk in MANAGER.streaming_llm_query(
+                req.text, session_id=x_session_id
+            ):
+                print("=======> ", chunk)
+                yield chunk
+        finally:
+            project_id.reset(token)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

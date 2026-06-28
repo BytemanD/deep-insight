@@ -1,3 +1,4 @@
+import json
 import textwrap
 from pathlib import Path
 from typing import Optional
@@ -20,16 +21,18 @@ from deep_insight.research import tools
 
 dotenv.load_dotenv()
 
+# instructions = """
+# 你是一个文档分析专家, 你的任务是根据用户的问题, 从ChromaDB知识库中检索出最相关的文档，并给出答案。
+# 你的回答必须遵循以下规则：
+# 1. 必须基于检索到的文档
+# 2. 如果找不到相关的文档，请返回 "没有找到相关的文档"
+# 3. 你的回答必须标注是根据哪个文档得出的结论
+
+# 你的回答。
+# """
+
 instructions = """
-你是一个文档分析专家, 你的任务是根据用户的问题, 从ChromaDB知识库中检索出最相关的文档，并给出答案。
-你的回答必须遵循以下规则：
-1. 必须基于检索到的文档
-2. 如果找不到相关的文档，请返回 "没有找到相关的文档"
-3. 你的回答必须标注是根据哪个文档得出的结论
-
-你的回答。
-
-确保你的文档
+你是一个文档分析专家。
 """
 
 
@@ -142,3 +145,57 @@ class ResearchAI:
             else:
                 logger.debug("other event: {}", event)
         return llm_answer
+
+    async def streaming_query(
+        self,
+        text: str,
+        session_id: Optional[str] = None,
+    ):
+        logger.debug("输入: {}", text)
+
+        result = Runner.run_streamed(
+            self.agent,
+            text,
+            session=SQLiteSession(
+                session_id or str(uuid4()),
+                db_path=self.session_store_path,
+            ),
+            max_turns=102400,
+        )
+        async for event in result.stream_events():
+            if isinstance(event, stream_events.AgentUpdatedStreamEvent):
+                yield f"data: {json.dumps({'type': 'info', 'content': f'切换Agent: {event.new_agent.name}'})}\n\n"
+                continue
+            elif isinstance(event, stream_events.RawResponsesStreamEvent):
+                if hasattr(event.data, "delta") and event.data.delta:
+                    print("00000000000", event.data.delta)
+                    yield f"data: {json.dumps({'type': 'thinking', 'content': event.data.delta})}\n\n"
+                elif isinstance(event.data, ResponseFailedEvent):
+                    logger.debug(
+                        "received response failed event: {}", event.data.response.error
+                    )
+                    logger.error("收到错误事件: {}", event.data.response.error)
+                    yield f"data: {json.dumps({'type': 'error', 'content': str(event.data.response.error)})}\n\n"
+                continue
+            elif event.name == "tool_called":
+                logger.info(
+                    "选择工具: {}, 参数: {}",
+                    event.item.raw_item.name,
+                    event.item.raw_item.arguments,
+                )
+                yield f"data: {json.dumps({'type': 'info', 'content': f'使用工具: {event.item.raw_item.name}'})}\n\n"
+                continue
+            elif event.name == "tool_output":
+                logger.info("工具输出: {}", text_shorten(event.item.output))
+                continue
+            elif isinstance(event, stream_events.RunItemStreamEvent):
+                if event.item.raw_item.content:
+                    for content in event.item.raw_item.content:
+                        if not content.text:
+                            continue
+                        yield f"data: {json.dumps({'type': 'text', 'content': content.text})}\n\n"
+                continue
+        yield "data: [DONE]\n\n"
+
+    async def list_messages(self):
+        pass
