@@ -10,7 +10,7 @@ class MasterManager:
         return SERVICE.list_docs()
 
     async def llm_query(self, text: str):
-        return await self.llm.query(text)
+        await self.llm.query(text)
 
     def retrival(self, text: str):
         return SERVICE.query(text)

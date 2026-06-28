@@ -53,8 +53,13 @@ class ResearchAI:
             ],
         )
 
-    async def query(self, text: str, session_id: Optional[str] = None):
+    async def query(
+        self,
+        text: str,
+        session_id: Optional[str] = None,
+    ):
         logger.debug("输入: {}", text)
+
         result = Runner.run_streamed(
             self.agent,
             text,

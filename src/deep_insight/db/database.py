@@ -25,3 +25,10 @@ def add(model: SQLModel):
         session.add(model)
         session.commit()
         session.refresh(model)
+
+
+def update(model: SQLModel):
+    with Session(engine) as session:
+        session.add(model)
+        session.commit()
+        session.refresh(model)

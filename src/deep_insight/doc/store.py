@@ -6,6 +6,7 @@ import click
 from loguru import logger
 from pydantic import BaseModel
 
+from deep_insight.common import context
 from deep_insight.common.utils import file_sha256
 
 
@@ -31,13 +32,16 @@ class DocStore:
             db_path.mkdir(parents=True)
         self.client = chromadb.PersistentClient(path=db_path)
 
-    def _get_collection(self, collection_name: str):
-        return self.client.get_or_create_collection(name=collection_name)
+    def _get_collection(self, collection_name: Optional[str] = None):
+        return self.client.get_or_create_collection(
+            name=collection_name or context.project_id.get() or DEFAULT_COLLECTION_NAME
+        )
 
     def import_file(
-        self, file_path: str, collection_name: str = DEFAULT_COLLECTION_NAME
+        self,
+        file_path: str,
     ):
-        collection = self._get_collection(collection_name)
+        collection = self._get_collection()
         logger.debug("read file: {} ...", file_path)
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -48,24 +52,21 @@ class DocStore:
         if docs.get("ids"):
             raise click.ClickException("document already exists")
 
-        logger.debug("add document to  ...")
+        logger.debug("add document to project {} ...", collection.name)
         collection.add(
             ids=[doc_id],
             documents=[text],
-            metadatas=[
-                {
-                    "file_name": Path(file_path).name,
-                }
-            ],
+            metadatas=[{"file_name": Path(file_path).name}],
         )
 
-    def list_docs(self, collection_name: str = DEFAULT_COLLECTION_NAME):
-        collection = self._get_collection(collection_name)
-        logger.info("list docs, collection_name={}", collection_name)
+    def list_docs(self):
+        logger.info("")
+        collection = self._get_collection()
+        logger.info("list docs, collection_name={}", collection.name)
         try:
             result = collection.get(include=["metadatas"])
         except Exception as e:
-            logger.exception("list docs error, collection_name={}", collection_name)
+            logger.exception("list docs error, collection_name={}", collection.name)
             raise e
 
         logger.debug("result: {}", result)
@@ -82,7 +83,10 @@ class DocStore:
         return docs
 
     def query(
-        self, text: str, n_results=1, collection_name: str = DEFAULT_COLLECTION_NAME
+        self,
+        text: str,
+        n_results=1,
+        collection_name: str = DEFAULT_COLLECTION_NAME,
     ) -> List[RetrivalDoc]:
         collection = self._get_collection(collection_name)
         results = collection.query(query_texts=[text], n_results=n_results)

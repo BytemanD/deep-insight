@@ -30,6 +30,9 @@ class BaseSQLModel(SQLModel, table=False):
         stm = select(cls).where(cls.uuid == uuid)
         return database.query_first(stm)
 
+    def update(self):
+        database.update(self)
+
     def delete(self):
         """创建新记录到数据库, id 已存在则抛出异常"""
         stm = delete(self.__class__).where(self.__class__.uuid == self.uuid)

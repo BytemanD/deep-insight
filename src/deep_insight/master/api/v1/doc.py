@@ -1,11 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 
+from deep_insight.common.context import project_id
 from deep_insight.master.manager import MANAGER
 
 router = APIRouter(prefix="/docs")
 
 
 @router.get("")
-async def list_docs():
-    docs = MANAGER.list_docs()
-    return {"docs": docs}
+async def list_docs(x_project_id: str = Header(None)):
+    token = project_id.set(x_project_id)
+    try:
+        docs = MANAGER.list_docs()
+        return {"docs": docs}
+    finally:
+        project_id.reset(token)

@@ -1,15 +1,23 @@
 import asyncio
+import os
 from pathlib import Path
 
 import click
+import dotenv
 import uvicorn
+from pystonic.pretty import output
 
 from deep_insight.collector import fs, static
+from deep_insight.common import context
 from deep_insight.doc import store
 from deep_insight.doc.store import SERVICE
 from deep_insight.research.ai import ResearchAI
 
 AI = ResearchAI()
+
+dotenv.load_dotenv()
+
+context.project_id.set(os.getenv("PROJECT_ID"))
 
 
 @click.group()
@@ -25,8 +33,12 @@ def chromadb():
 @chromadb.command("docs")
 def list_docs():
     """List docs"""
+    print(os.getenv("PROJECT_ID"))
+    print(context.project_id.get())
+
+    click.secho(f"Project: {context.project_id.get()}", fg="cyan")
     docs = SERVICE.list_docs()
-    print(docs)
+    output.print_models(docs)
 
 
 @chromadb.command("import")
