@@ -4,8 +4,8 @@ from fastapi import APIRouter, Header, HTTPException
 from loguru import logger
 from pydantic import BaseModel
 
+from deep_insight.apps.master.manager import MANAGER
 from deep_insight.db.models import Session
-from deep_insight.master.manager import MANAGER
 
 router = APIRouter(prefix="/sessions")
 

@@ -12,14 +12,13 @@
     </v-app-bar>
 
     <v-navigation-drawer v-model="drawer" app :permanent="!isMobile" :temporary="isMobile" :rail="!isMobile && !drawer"
-      @click="expandDrawer">
-      <v-list-item class="px-2" title="Deep Insight" subtitle="知识库">
+      @click="expandDrawer" width="200">
+      <!-- <v-list-item class="px-2" title="Deep Insight" subtitle="知识库">
         <template #prepend>
           <v-avatar color="primary" class="text-white">DI</v-avatar>
         </template>
-      </v-list-item>
-
-      <v-divider />
+</v-list-item>
+<v-divider /> -->
 
       <v-list nav>
         <v-list-item prepend-icon="mdi-chat" title="对话" :to="{ name: 'Conversation' }"

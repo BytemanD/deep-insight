@@ -2,20 +2,21 @@
   <v-row no-gutters class="fill-height">
     <v-col cols="2" class="d-flex flex-column" style="border-right: 1px solid #e0e0e0;">
       <div class="pa-3">
-        <v-btn block color="primary" @click="createDialog">+ 新建会话</v-btn>
+        <v-btn block color="primary" @click="createDialog" prepend-icon="mdi-plus">新建会话</v-btn>
       </div>
       <v-divider></v-divider>
-      <v-list density="compact" nav class="overflow-y-auto flex-grow-1">
-        <v-list-item v-for="d in dialogs" :key="d.uuid" :title="d.name || '未命名会话'" :subtitle="formatTime(d.created_at)"
-          :active="selectedDialog?.uuid === d.uuid" @click="selectDialog(d)"
-          :disabled="selectedDialog?.uuid === d.uuid">
-          <template #append>
-            <v-btn icon="mdi-close" variant="text" size="small" @click.stop="handleDeleteDialog(d)" />
-          </template>
-        </v-list-item>
-      </v-list>
+      <v-virtual-scroll :items="dialogs" height="100">
+        <template v-slot:default="{ item }">
+          <v-list-item :title="item.name || '未命名会话'" :subtitle="formatTime(item.created_at)"
+            :active="selectedDialog?.uuid === item.uuid" @click="selectDialog(item)"
+            :disabled="selectedDialog?.uuid === item.uuid">
+            <template #append>
+              <v-btn icon="mdi-close" variant="text" size="small" @click.stop="handleDeleteDialog(item)" />
+            </template>
+          </v-list-item>
+        </template>
+      </v-virtual-scroll>
       <v-divider></v-divider>
-
       <div class="pa-2 text-caption text-medium-emphasis text-center">{{ dialogs.length }} 个会话</div>
     </v-col>
     <v-col class="d-flex flex-column">
@@ -36,7 +37,7 @@
             <v-col v-else class="d-flex align-start flex-column">
               <div style="max-width: 70%;">
                 <!-- 思考过程 -->
-                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small"
+                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small" v-if="item.thinking"
                   :model-value="item.content ? 1 : 0">
                   <v-expansion-panel>
                     <v-expansion-panel-title style="max-width: 200px" density="compact">
@@ -49,13 +50,15 @@
                       </template>
                     </v-expansion-panel-title>
                     <v-expansion-panel-text>
-                      <p style="font-size: small;">{{ item.thinking }}</p>
+                      <p class="d-inline-block rounded-bs-0" rounded="xl" density="compact" style="font-size: small;"
+                        v-html="marked(item.thinking)"></p>
+                      <!-- <p style="font-size: small;">{{ item.thinking }}</p> -->
                     </v-expansion-panel-text>
                   </v-expansion-panel>
                 </v-expansion-panels>
 
-                <v-alert v-if="item.content" class="d-inline-block rounded-bs-0" rounded="xl" density="compact"
-                  style="font-size: small;" :text="item.content">
+                <v-alert v-if="item.content" class="d-inline-block rounded-bs-0 px-8" rounded="xl" density="compact"
+                  style="font-size: small;" v-html="marked(item.content)">
                 </v-alert>
               </div>
             </v-col>
@@ -82,6 +85,8 @@
 import { ref, inject, onMounted, watch, nextTick } from 'vue'
 import { useDisplay } from 'vuetify'
 import API from '../api'
+import { marked } from 'marked'
+
 
 const { smAndDown } = useDisplay()
 const isMobile = smAndDown
@@ -95,6 +100,7 @@ const dialogs = ref([])
 const selectedDialog = ref(null)
 const showTooltip = ref(true)
 const lastLLmMsg = ref({ role: 'assistant', content: '' })
+
 
 function formatTime(iso) {
   if (!iso) return ''
@@ -210,4 +216,24 @@ watch(projectId, (newVal, oldVal) => {
 .fill-height {
   height: calc(100vh - 64px);
 }
+
+:deep(::-webkit-scrollbar) {
+  width: 0px;
+  height: 0px;
+}
+
+/* :deep(::-webkit-scrollbar-track) {
+  background: #f1f1f1;
+  border-radius: 0px;
+}
+
+:deep(::-webkit-scrollbar-thumb) {
+  background: grey;
+  border-radius: 0px;
+  transition: background 0.3s;
+}
+
+:deep(::-webkit-scrollbar-thumb:hover) {
+  background: #155A9E;
+} */
 </style>

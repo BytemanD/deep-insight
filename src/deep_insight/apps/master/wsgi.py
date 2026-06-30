@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from loguru import logger
 
+from deep_insight.apps.master.api.v1 import doc, project, query, session
 from deep_insight.db.models import create_all_tables
-from deep_insight.master.api.v1 import doc, project, query, session
 
 
 @asynccontextmanager

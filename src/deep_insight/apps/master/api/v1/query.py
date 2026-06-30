@@ -2,8 +2,8 @@ from fastapi import APIRouter, Header
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from deep_insight.apps.master.manager import MANAGER
 from deep_insight.common.context import project_id
-from deep_insight.master.manager import MANAGER
 
 router = APIRouter(prefix="/agents")
 
