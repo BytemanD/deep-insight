@@ -5,6 +5,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from deep_insight.db.models import Session
+from deep_insight.master.manager import MANAGER
 
 router = APIRouter(prefix="/sessions")
 
@@ -72,9 +73,12 @@ async def update_session(uuid: str, body: SessionUpdate):
     return _to_response(session)
 
 
-@router.delete("/{uuid}", status_code=204)
-async def delete_session(uuid: str):
-    session = Session.get_by_uuid(uuid)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    session.delete()
+@router.delete("/{session_id}", status_code=204)
+async def delete_session(session_id: str):
+    MANAGER.delete_session(session_id)
+
+
+@router.get("/{session_id}/messages")
+async def get_messages(session_id: str):
+    messages = await MANAGER.list_messages(session_id)
+    return {"messages": messages}

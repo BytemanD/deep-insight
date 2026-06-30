@@ -83,18 +83,19 @@ class API {
     })
   }
   chat(text) {
-    return this.stream_request('/query', {
+    return this.stream_request('/chat', {
       method: 'POST',
       body: JSON.stringify({ text }),
     })
   }
   queryStream(text, onChunk, onDone, onError) {
     const projectId = localStorage.getItem('project_id') || ''
+    let sessionId = localStorage.getItem('session_id')
     const headers = {
       'Content-Type': 'application/json',
       ...(projectId ? { 'X-Project-Id': projectId } : {}),
     }
-    fetch(`${BASE}/query`, {
+    fetch(`${BASE}/agents/${sessionId}/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ text }),
@@ -155,6 +156,9 @@ class API {
 
   deleteSession(uuid) {
     return this.request(`/sessions/${uuid}`, { method: 'DELETE' })
+  }
+  getSessionMessages(session_id) {
+    return this.request(`/sessions/${session_id}/messages`, { method: 'GET' })
   }
 }
 

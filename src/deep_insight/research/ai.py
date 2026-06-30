@@ -56,6 +56,12 @@ class ResearchAI:
             ],
         )
 
+    def _get_session(self, session_id: Optional[str] = None):
+        return SQLiteSession(
+            session_id or str(uuid4()),
+            db_path=self.session_store_path,
+        )
+
     async def query(
         self,
         text: str,
@@ -66,10 +72,7 @@ class ResearchAI:
         result = Runner.run_streamed(
             self.agent,
             text,
-            session=SQLiteSession(
-                session_id or str(uuid4()),
-                db_path=self.session_store_path,
-            ),
+            session=self._get_session(session_id=session_id),
             max_turns=102400,
             # NOTE: 使用了本地本地会话持久化后不能使用以下参数
             # auto_previous_response_id=True,
@@ -151,15 +154,12 @@ class ResearchAI:
         text: str,
         session_id: Optional[str] = None,
     ):
-        logger.debug("输入: {}", text)
+        logger.debug("query({}): {}", session_id, text)
 
         result = Runner.run_streamed(
             self.agent,
             text,
-            session=SQLiteSession(
-                session_id or str(uuid4()),
-                db_path=self.session_store_path,
-            ),
+            session=self._get_session(session_id),
             max_turns=102400,
         )
         async for event in result.stream_events():
@@ -168,7 +168,6 @@ class ResearchAI:
                 continue
             elif isinstance(event, stream_events.RawResponsesStreamEvent):
                 if hasattr(event.data, "delta") and event.data.delta:
-                    print("00000000000", event.data.delta)
                     yield f"data: {json.dumps({'type': 'thinking', 'content': event.data.delta})}\n\n"
                 elif isinstance(event.data, ResponseFailedEvent):
                     logger.debug(
@@ -197,5 +196,12 @@ class ResearchAI:
                 continue
         yield "data: [DONE]\n\n"
 
-    async def list_messages(self):
-        pass
+    async def list_messages(self, session_id: Optional[str] = None):
+        logger.debug("list messages of session {}", session_id)
+        session = self._get_session(session_id=session_id)
+        return await session.get_items()
+
+    async def clear_session_items(self, session_id: str):
+        logger.debug("clear session {}", session_id)
+        session = self._get_session(session_id=session_id)
+        await session.clear_session()

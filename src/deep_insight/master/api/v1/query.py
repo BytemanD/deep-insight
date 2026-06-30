@@ -5,26 +5,25 @@ from pydantic import BaseModel
 from deep_insight.common.context import project_id
 from deep_insight.master.manager import MANAGER
 
-router = APIRouter(prefix="/query")
+router = APIRouter(prefix="/agents")
 
 
 class QueryRequest(BaseModel):
     text: str
 
 
-@router.post("")
+@router.post("/{session_id}/chat")
 async def query(
+    session_id: str,
     req: QueryRequest,
     x_project_id: str = Header(None),
-    x_session_id: str = Header(None),
 ):
     async def event_stream():
         token = project_id.set(x_project_id)
         try:
             async for chunk in MANAGER.streaming_llm_query(
-                req.text, session_id=x_session_id
+                req.text, session_id=session_id
             ):
-                print("=======> ", chunk)
                 yield chunk
         finally:
             project_id.reset(token)

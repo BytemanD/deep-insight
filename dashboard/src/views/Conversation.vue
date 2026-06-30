@@ -7,7 +7,8 @@
       <v-divider></v-divider>
       <v-list density="compact" nav class="overflow-y-auto flex-grow-1">
         <v-list-item v-for="d in dialogs" :key="d.uuid" :title="d.name || '未命名会话'" :subtitle="formatTime(d.created_at)"
-          :active="selectedDialog?.uuid === d.uuid" @click="selectDialog(d)">
+          :active="selectedDialog?.uuid === d.uuid" @click="selectDialog(d)"
+          :disabled="selectedDialog?.uuid === d.uuid">
           <template #append>
             <v-btn icon="mdi-close" variant="text" size="small" @click.stop="handleDeleteDialog(d)" />
           </template>
@@ -22,39 +23,46 @@
         请选择或创建一个会话
       </div>
       <template v-else>
-        <v-virtual-scroll ref="scrollRef" height="260px" item-height="32" v-model="messages" :items="messages">
+        <v-virtual-scroll ref="scrollRef" height="260px" class="pa-2" v-model="messages" :items="messages">
           <template v-slot:default="{ item, index }">
-            <div :class="['d-flex mb-3', item.role === 'user' ? 'justify-end' : 'justify-start']">
-              <v-card :class="['pa-3', item.role === 'user' ? 'bg-primary' : 'bg-surface-variant']"
-                :max-width="isMobile ? '85%' : '70%'" rounded="lg" density="compact">
-                <v-expansion-panels v-if="item.thinking" density="compact" theme="dark" class="mb-4">
+            <v-col v-if="item.role === 'user'" class="d-flex align-end flex-column">
+              <div style="max-width: 70%;">
+                <v-alert class="d-inline-block rounded-be-0 text-body-large" rounded="xl" color="info" density="compact"
+                  style="font-size: small;">
+                  {{ item.content }}
+                </v-alert>
+              </div>
+            </v-col>
+            <v-col v-else class="d-flex align-start flex-column">
+              <div style="max-width: 70%;">
+                <!-- 思考过程 -->
+                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small"
+                  :model-value="item.content ? 1 : 0">
                   <v-expansion-panel>
-                    <v-expansion-panel-title v-if="!item.content">
-                      <span>思考中 ...</span>
+                    <v-expansion-panel-title style="max-width: 200px" density="compact">
+                      <span class="text-warning" v-if="!item.content && loading">思考中 ...</span>
+                      <span v-else class="text-info">已思考</span>
                       <template v-slot:actions>
-                        <div class="d-flex align-center">
-                          <v-progress-circular indeterminate color="primary" size="24" width="2" />
-                        </div>
+                        <v-progress-circular v-if="!item.content && loading" indeterminate
+                          size="20"></v-progress-circular>
+                        <v-icon v-else>mdi-check</v-icon>
                       </template>
                     </v-expansion-panel-title>
-                    <v-expansion-panel-title v-else>
-                      <span>思考</span>
-                    </v-expansion-panel-title>
-
                     <v-expansion-panel-text>
-                      {{ item.thinking }}
+                      <p style="font-size: small;">{{ item.thinking }}</p>
                     </v-expansion-panel-text>
                   </v-expansion-panel>
-                  <!-- 加载状态：显示转圈圈 -->
                 </v-expansion-panels>
-                <div class="text-body-2" style="white-space: pre-wrap; word-break: break-word; min-width: 200px;">
-                  {{ item.content }}
-                </div>
-              </v-card>
-            </div>
+
+                <v-alert v-if="item.content" class="d-inline-block rounded-bs-0" rounded="xl" density="compact"
+                  style="font-size: small;" :text="item.content">
+                </v-alert>
+              </div>
+            </v-col>
           </template>
 
         </v-virtual-scroll>
+
         <v-divider></v-divider>
         <v-footer class="">
           <v-text-field v-model="input" variant="outlined" density="compact" placeholder="输入消息..." hide-details
@@ -73,7 +81,7 @@
 <script setup>
 import { ref, inject, onMounted, watch, nextTick } from 'vue'
 import { useDisplay } from 'vuetify'
-import api from '../api'
+import API from '../api'
 
 const { smAndDown } = useDisplay()
 const isMobile = smAndDown
@@ -86,6 +94,8 @@ const projectId = inject('projectId')
 const dialogs = ref([])
 const selectedDialog = ref(null)
 const showTooltip = ref(true)
+const lastLLmMsg = ref({ role: 'assistant', content: '' })
+
 function formatTime(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -94,7 +104,7 @@ function formatTime(iso) {
 
 async function loadDialogs() {
   try {
-    const res = await api.listSessions()
+    const res = await API.listSessions()
     dialogs.value = res.sessions || []
   } catch (e) {
     console.error('Failed to load dialogs', e)
@@ -105,7 +115,7 @@ async function createDialog() {
   const pid = projectId?.value
   if (!pid) return
   try {
-    const dialog = await api.createSession(pid)
+    const dialog = await API.createSession(pid)
     dialogs.value.unshift(dialog)
     selectDialog(dialog)
   } catch (e) {
@@ -115,7 +125,7 @@ async function createDialog() {
 
 async function handleDeleteDialog(d) {
   try {
-    await api.deleteSession(d.uuid)
+    await API.deleteSession(d.uuid)
     dialogs.value = dialogs.value.filter(item => item.uuid !== d.uuid)
     if (selectedDialog.value?.uuid === d.uuid) {
       selectedDialog.value = null
@@ -126,13 +136,14 @@ async function handleDeleteDialog(d) {
   }
 }
 
-function selectDialog(d) {
+async function selectDialog(d) {
   selectedDialog.value = d
-  messages.value = []
   input.value = ''
+  messages.value = []
   localStorage.setItem('session_id', d.uuid)
+  let data = await API.getSessionMessages(d.uuid)
+  messages.value = data.messages
 }
-const lastLLmMsg = ref({ role: 'assistant', content: '' })
 
 async function send() {
   const text = input.value.trim()
@@ -150,7 +161,7 @@ async function send() {
   messages.value.push({ role: 'assistant', content: '', thinking: '' })
 
   let hasError = false
-  await api.queryStream(
+  await API.queryStream(
     text,
     (chunk, type) => {
       if (type === 'thinking') {
