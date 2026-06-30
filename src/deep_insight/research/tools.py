@@ -2,8 +2,13 @@ from typing import List
 
 from agents import function_tool
 
-from deep_insight.common.context import project_id
-from deep_insight.doc.store import DEFAULT_COLLECTION_NAME, SERVICE, Doc, RetrivalDoc
+from deep_insight.apps.vector.drivers.chromadb import (
+    RetrivalDoc,
+)
+from deep_insight.apps.vector.manager import get_vector_driver
+from deep_insight.apps.vector.models import Doc, RetrivalDoc
+
+vector_driver = get_vector_driver()
 
 
 @function_tool(timeout=300)
@@ -13,11 +18,7 @@ async def list_docs() -> List[Doc]:
     Returns:
         List[dict]: 所有匹配的文档列表
     """
-    pid = project_id.get()
-    collection = pid or DEFAULT_COLLECTION_NAME
-    return [
-        x.model_dump(mode="json") for x in SERVICE.list_docs(collection_name=collection)
-    ]
+    return [x.model_dump(mode="json") for x in vector_driver.list_docs()]
 
 
 @function_tool(timeout=300)
@@ -30,9 +31,7 @@ async def query(text: str, n_results: int = 1) -> List[RetrivalDoc]:
     Returns:
         List[dict]: 所有匹配的文档内容列表
     """
-    pid = project_id.get()
-    collection = pid or DEFAULT_COLLECTION_NAME
     return [
         x.model_dump(mode="json")
-        for x in SERVICE.query(text, n_results=n_results, collection_name=collection)
+        for x in vector_driver.query(text, n_results=n_results)
     ]

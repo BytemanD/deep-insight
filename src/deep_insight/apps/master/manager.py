@@ -1,8 +1,10 @@
+from typing import Optional
+
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from deep_insight.db.models import Session
-from deep_insight.doc.store import DocStore
+from deep_insight.apps.vector.manager import get_vector_driver
+from deep_insight.db.models import Project, Session
 from deep_insight.research.ai import ResearchAI
 
 
@@ -14,14 +16,47 @@ class Message(BaseModel):
 
 class MasterManager:
     def __init__(self):
-        self.doc_store = DocStore()
+        self.vector_driver = get_vector_driver()
         self.llm = ResearchAI()
 
     def list_docs(self):
-        return self.doc_store.list_docs()
+        return self.vector_driver.list_docs()
+
+    def create_project(self, name: str, description: Optional[str]):
+        item = Project(name=name, description=description)
+        item.create()
+        return item
+
+    def list_project(self):
+        return Project.query()
+
+    def delete_project(self, uuid: str):
+        db_model = Project.get_by_uuid(uuid)
+        if not db_model:
+            raise Exception(f"Project {uuid} not found")
+        db_model.delete()
+
+    def list_session(self):
+        """Project manager"""
+        return Session.query()
+
+    def create_session(self, name: str, project: Optional[str]):
+        db_project = Project.get_by_uuid(project)
+        if not db_project:
+            raise Exception(f"Project {project} not found")
+        item = Session(project_uuid=project, name=name)
+        item.create()
+        return item
+
+    def delete_session(self, uuid: str):
+        db_dialog = Session.get_by_uuid(uuid)
+        if not db_dialog:
+            raise Exception(f"Session {uuid} not found")
+
+        db_dialog.delete()
 
     def retrival(self, text: str):
-        return self.doc_store.query(text)
+        return self.vector_driver.query(text)
 
     async def delete_session(self, session_id: str):
         session = Session.get_by_uuid(session_id)
@@ -57,7 +92,7 @@ class MasterManager:
 
     async def streaming_llm_query(self, text: str, session_id: str = None):
         async for chunk in self.llm.streaming_query(text, session_id=session_id):
-            yield chunk
+            yield f"data: {chunk}\n\n"
 
 
 MANAGER = MasterManager()

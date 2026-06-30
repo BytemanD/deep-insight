@@ -4,30 +4,18 @@ from typing import List, Optional
 import chromadb
 import click
 from loguru import logger
-from pydantic import BaseModel
 
+from deep_insight.apps.vector.models import RetrivalDoc
 from deep_insight.common import context
+from deep_insight.common.conf import CONF
 from deep_insight.common.utils import file_sha256
 
-
-class Doc(BaseModel):
-    file_path: str
+DEFAULT_COLLECTION_NAME = "DEFAULT"
 
 
-class RetrivalDoc(BaseModel):
-    id: str
-    name: str
-    distance: Optional[float] = 0
-    content: Optional[str] = ""
-    metadata: Optional[dict] = {}
-
-
-DEFAULT_COLLECTION_NAME = "deep_insight"
-
-
-class DocStore:
-    def __init__(self, path: str = "data/chromadb"):
-        db_path = Path(path)
+class ChromadbDriver:
+    def __init__(self):
+        db_path = Path(CONF.chromadb.path)
         if not db_path.exists():
             db_path.mkdir(parents=True)
         self.client = chromadb.PersistentClient(path=db_path)
@@ -37,10 +25,7 @@ class DocStore:
             name=collection_name or context.project_id.get() or DEFAULT_COLLECTION_NAME
         )
 
-    def import_file(
-        self,
-        file_path: str,
-    ):
+    def import_file(self, file_path: str):
         collection = self._get_collection()
         logger.debug("read file: {} ...", file_path)
         with open(file_path, "r", encoding="utf-8") as f:
@@ -86,7 +71,7 @@ class DocStore:
         self,
         text: str,
         n_results=1,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
+        collection_name: Optional[str] = None,
     ) -> List[RetrivalDoc]:
         collection = self._get_collection(collection_name)
         results = collection.query(query_texts=[text], n_results=n_results)
@@ -98,15 +83,13 @@ class DocStore:
             return []
         docs = [
             RetrivalDoc(
+                id=id,
                 name=(results["metadatas"][0][index] or {}).get("file_name"),
                 metadata=results["metadatas"][0][index] or {},
                 distance=results["distances"][0][index] or 0,
                 content=results["documents"][0][index] or "",
             )
-            for index, _ in enumerate(results["ids"][0])
+            for index, id in enumerate(results["ids"][0])
         ]
         logger.success("return {} docs", len(docs))
         return docs
-
-
-SERVICE = DocStore()

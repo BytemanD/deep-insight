@@ -1,67 +1,18 @@
 import asyncio
-import os
-from pathlib import Path
+from typing import Optional
 
 import click
-import dotenv
-import uvicorn
 from pystonic.pretty import output
 
-from deep_insight.collector import fs, static
-from deep_insight.common import context
-from deep_insight.doc import store
-from deep_insight.doc.store import SERVICE
+from deep_insight.apps.master.manager import MANAGER
 from deep_insight.research.ai import ResearchAI
+
+from . import app
 
 AI = ResearchAI()
 
-dotenv.load_dotenv()
 
-context.project_id.set(os.getenv("PROJECT_ID"))
-
-
-@click.group()
-def app():
-    pass
-
-
-@app.group()
-def chromadb():
-    """ChromaDB"""
-
-
-@chromadb.command("docs")
-def list_docs():
-    """List docs"""
-    print(os.getenv("PROJECT_ID"))
-    print(context.project_id.get())
-
-    click.secho(f"Project: {context.project_id.get()}", fg="cyan")
-    docs = SERVICE.list_docs()
-    output.print_models(docs)
-
-
-@chromadb.command("import")
-@click.argument("file_path")
-def import_markdown(file_path: str):
-    """Import markdown file"""
-    SERVICE.import_file(file_path)
-    click.echo("imported success", color="green")
-
-
-@chromadb.command("query")
-def query(text: str):
-    """Query docs"""
-    results = SERVICE.query(text, n_results=1)
-    print(results)
-
-
-@app.group()
-def ai():
-    """AI"""
-
-
-@ai.command()
+@app.command()
 @click.argument("text")
 def query(text: str):
     """AI"""
@@ -69,33 +20,50 @@ def query(text: str):
 
 
 @app.group()
-def doc():
-    """Docs manager"""
+def project():
+    """Project manager"""
 
 
-@doc.command()
-@click.argument("source")
-def ingest(source: str):
-    """ingest from file/url"""
-
-    if source.startswith("http"):
-        doc_path = static.COLLECTOR.collect(source)
-    elif Path(source).exists():
-        doc_path = fs.COLLECTOR.collect(source)
-    else:
-        raise click.ClickException("source not exists")
-
-    click.echo("import to chromadb ...")
-    store.SERVICE.import_file(doc_path)
-
-    click.secho("ingest success", fg="green")
+@project.command("list")
+def list_project():
+    output.print_models(MANAGER.list_project())
 
 
-@app.command()
-def master():
-    """Start master server"""
+@project.command("create")
+@click.argument("name")
+@click.option("-d", "--description", help="Project description")
+def create_project(name: str, description: Optional[str]):
+    output.print_model(MANAGER.create_project(name=name, description=description))
 
-    uvicorn.run("deep_insight.master.wsgi:app", host="0.0.0.0", port=8000, reload=True)
+
+@project.command("delete")
+@click.argument("uuid")
+def delete_project(uuid: str):
+    MANAGER.delete_project(uuid)
+
+
+@app.group()
+def session():
+    """Session manager"""
+
+
+@session.command("list")
+def list_dialog():
+    """Project manager"""
+    output.print_models(MANAGER.list_session())
+
+
+@session.command("create")
+@click.argument("name")
+@click.argument("project")
+def create_dialog(name: str, project: Optional[str]):
+    output.print_model(MANAGER.create_session(name, project))
+
+
+@session.command("delete")
+@click.argument("uuid")
+def delete_session(uuid: str):
+    MANAGER.delete_session(uuid)
 
 
 if __name__ == "__main__":
