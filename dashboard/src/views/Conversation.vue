@@ -35,12 +35,12 @@
               </div>
             </v-col>
             <v-col v-else class="d-flex align-start flex-column">
-              <div style="max-width: 70%;">
+              <div style="max-width: 70%; white-space: pre-wrap; word-break: break-all; overflow-x: visible;">
                 <!-- 思考过程 -->
                 <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small" v-if="item.thinking"
                   :model-value="item.content ? 1 : 0">
                   <v-expansion-panel>
-                    <v-expansion-panel-title style="max-width: 200px" density="compact">
+                    <v-expansion-panel-title style="max-width: 500px" density="compact">
                       <span class="text-warning" v-if="!item.content && loading">思考中 ...</span>
                       <span v-else class="text-info">已思考</span>
                       <template v-slot:actions>
@@ -49,7 +49,7 @@
                         <v-icon v-else>mdi-check</v-icon>
                       </template>
                     </v-expansion-panel-title>
-                    <v-expansion-panel-text>
+                    <v-expansion-panel-text style="max-width: 500px">
                       <p class="d-inline-block rounded-bs-0" rounded="xl" density="compact" style="font-size: small;"
                         v-html="marked(item.thinking)"></p>
                       <!-- <p style="font-size: small;">{{ item.thinking }}</p> -->
@@ -57,9 +57,19 @@
                   </v-expansion-panel>
                 </v-expansion-panels>
 
-                <v-alert v-if="item.content" class="d-inline-block rounded-bs-0 px-8" rounded="xl" density="compact"
+                <v-card class="rounded-bs-0 pa-4" variant="tonal" rounded="xl" v-if="item.content" max-width="600">
+                  <v-card-text v-html="marked(item.content)">
+                  </v-card-text>
+                </v-card>
+
+                <!-- <v-alert v-if="item.content" class="d-inline-block rounded-bs-0 px-8" rounded="xl" density="compact"
                   style="font-size: small;" v-html="marked(item.content)">
                 </v-alert>
+                <div
+                  style="border: 2px solid red; width: 500px; white-space: pre-wrap; word-break: break-all; overflow-x: wrap;">
+                  <v-alert>{{ marked(item.content) }}</v-alert>
+                  <v-alert v-html="marked(item.content)"></v-alert>
+                </div> -->
               </div>
             </v-col>
           </template>

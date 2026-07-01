@@ -1,9 +1,13 @@
+from pathlib import Path
 from typing import Optional
 
 from fastapi import HTTPException
+from loguru import logger
 from pydantic import BaseModel
 
 from deep_insight.apps.vector.manager import get_vector_driver
+from deep_insight.common import context
+from deep_insight.common.exceptions import DocAlreadyExists
 from deep_insight.db.models import Doc, Project, Session
 from deep_insight.research.ai import ResearchAI
 
@@ -20,35 +24,49 @@ class MasterManager:
         self.llm = ResearchAI()
 
     def list_docs(self):
+        pid = context.project_id.get()
+        if pid:
+            return Doc.query(Doc.project_uuid == pid)
         return Doc.query()
 
-    def upload_doc(self, filename: str, content: bytes):
-        from pathlib import Path
-
-        import click
-        from fastapi import HTTPException
-
+    def upload_doc(self, filename: str, content: bytes) -> Doc:
         raw_dir = Path("data/raw")
         raw_dir.mkdir(parents=True, exist_ok=True)
         file_path = raw_dir / filename
         file_path.write_bytes(content)
 
         doc = Doc(
+            project_uuid=context.project_id.get() or "",
             name=filename,
             file_size=len(content),
             file_path=str(file_path),
             status="pending",
         )
         doc.create()
+        return doc
 
+    def parse_doc(self, doc_uuid: str):
+        doc = Doc.get_by_uuid(doc_uuid)
+        if not doc:
+            logger.warning("parse_doc: doc {} not found, skip", doc_uuid)
+            return
+
+        logger.info("parse_doc: start parsing doc {} ({})", doc.name, doc_uuid)
+        doc.status = "parsing"
+        doc.update()
         try:
             self.vector_driver.import_file(doc)
             doc.status = "parsed"
             doc.update()
-        except click.ClickException as e:
+            logger.info("parse_doc: doc {} parsed successfully", doc_uuid)
+        except DocAlreadyExists:
+            logger.warning("parse_doc: doc {} already exists in vector store", doc_uuid)
             doc.status = "failed"
             doc.update()
-            raise HTTPException(status_code=409, detail=str(e))
+        except Exception:
+            logger.exception("parse_doc: doc {} parse failed", doc_uuid)
+            doc.status = "failed"
+            doc.update()
 
     def create_project(self, name: str, description: Optional[str]):
         item = Project(name=name, description=description)

@@ -91,6 +91,13 @@ class API {
     return this.request('/projects')
   }
 
+  createProject(name) {
+    return this.request('/projects', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+  }
+
   query(text) {
     return this.request('/query', {
       method: 'POST',

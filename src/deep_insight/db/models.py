@@ -59,6 +59,7 @@ class Session(BaseSQLModel, table=True):
 
 
 class Doc(BaseSQLModel, table=True):
+    project_uuid: str = Field(nullable=False, index=True)
     name: str = Field(nullable=False)
     file_size: int = Field(nullable=False)
     file_path: str = Field(nullable=False)

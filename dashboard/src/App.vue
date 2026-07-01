@@ -32,11 +32,27 @@
             style="min-width: 140px; max-width: 200px" @update:model-value="onProjectChange">
           </v-select>
         </v-toolbar-title>
-        <v-spacer />
+        <v-btn icon="mdi-plus" @click="projectDialog = true" />
         <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
       </v-app-bar>
 
-      <router-view />
+      <router-view :key="selectedProject" />
+
+      <v-dialog v-model="projectDialog" max-width="400">
+        <v-card>
+          <v-card-title>创建项目</v-card-title>
+          <v-card-text>
+            <v-text-field v-model="projectName" label="项目名称" variant="outlined" hide-details autofocus
+              @keyup.enter="createProject" />
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="projectDialog = false">取消</v-btn>
+            <v-btn color="primary" variant="elevated" :loading="projectCreating" :disabled="!projectName"
+              @click="createProject">创建</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-main>
   </v-app>
 </template>
@@ -81,6 +97,27 @@ function selectInitialProject() {
 function onProjectChange(val) {
   if (val) {
     localStorage.setItem('project_id', val)
+  }
+}
+
+const projectDialog = ref(false)
+const projectName = ref('')
+const projectCreating = ref(false)
+
+async function createProject() {
+  if (!projectName.value) return
+  projectCreating.value = true
+  try {
+    const res = await api.createProject(projectName.value)
+    projects.value.push(res)
+    selectedProject.value = res.uuid
+    localStorage.setItem('project_id', res.uuid)
+    projectDialog.value = false
+    projectName.value = ''
+  } catch (e) {
+    console.error('Failed to create project', e)
+  } finally {
+    projectCreating.value = false
   }
 }
 

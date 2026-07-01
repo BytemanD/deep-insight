@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import List, Optional
 
 import chromadb
-import click
 from loguru import logger
 
 from deep_insight.apps.vector.models import RetrivalDoc
 from deep_insight.common import context
 from deep_insight.common.conf import CONF
+from deep_insight.common.exceptions import DocAlreadyExists
 from deep_insight.db.models import Doc
 
 DEFAULT_COLLECTION_NAME = "DEFAULT"
@@ -27,20 +27,15 @@ class ChromadbDriver:
 
     def import_file(self, doc: Doc):
         collection = self._get_collection()
-        file_path = doc.file_path
-        logger.debug("read file: {} ...", file_path)
-        with open(file_path, "r", encoding="utf-8") as f:
+        existing = collection.get(doc.uuid)
+        if existing.get("ids"):
+            raise DocAlreadyExists("document already exists")
+
+        with open(doc.file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
-        doc_id = doc.uuid
-        logger.debug("document id: {}", doc_id)
-        existing = collection.get(doc_id)
-        if existing.get("ids"):
-            raise click.ClickException("document already exists")
-
-        logger.debug("add document to project {} ...", collection.name)
         collection.add(
-            ids=[doc_id],
+            ids=[doc.uuid],
             documents=[text],
             metadatas=[{"file_name": doc.name}],
         )

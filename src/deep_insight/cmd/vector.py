@@ -8,7 +8,6 @@ from deep_insight.apps.vector.manager import get_vector_driver
 from deep_insight.collector import fs, static
 from deep_insight.common import context
 from deep_insight.common.utils import text_shorten
-from deep_insight.doc import store
 
 driver = get_vector_driver()
 
@@ -57,7 +56,7 @@ def ingest(source: str):
         raise click.ClickException("source not exists")
 
     click.echo("import to chromadb ...")
-    store.SERVICE.import_file(doc_path)
+    driver.import_file(doc_path)
 
     click.secho("ingest success", fg="green")
 
