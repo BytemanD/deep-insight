@@ -1,24 +1,18 @@
 <template>
   <v-app>
-    <v-app-bar app elevation="1" color="primary-darken-1">
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-app-bar-title>Deep Insight</v-app-bar-title>
-      <v-spacer />
-      <v-select v-model="selectedProject" :items="projects" item-title="name" item-value="uuid" density="compact"
-        variant="solo" hide-details prepend-inner-icon="mdi-layers-outline" style="min-width: 160px; max-width: 220px"
-        @update:model-value="onProjectChange">
-      </v-select>
-      <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
-    </v-app-bar>
+    <v-navigation-drawer width="200" permanent :rail-width="60" :rail="drawer ? false : true">
+      <template v-slot:prepend>
+        <v-list-item v-if="drawer" class="pl-3 py-2" title="Deep Insight">
+          <template v-slot:prepend>
+            <v-avatar color="primary" class="text-white" size="32" variant="flat">DI</v-avatar>
+          </template>
+        </v-list-item>
+        <v-list-item v-else class="pl-3 py-2">
+          <v-avatar color="primary" class="text-white" size="32" variant="flat">DI</v-avatar>
+        </v-list-item>
 
-    <v-navigation-drawer v-model="drawer" app :permanent="!isMobile" :temporary="isMobile" :rail="!isMobile && !drawer"
-      @click="expandDrawer" width="200">
-      <!-- <v-list-item class="px-2" title="Deep Insight" subtitle="知识库">
-        <template #prepend>
-          <v-avatar color="primary" class="text-white">DI</v-avatar>
-        </template>
-</v-list-item>
-<v-divider /> -->
+      </template>
+      <v-divider />
 
       <v-list nav>
         <v-list-item prepend-icon="mdi-chat" title="对话" :to="{ name: 'Conversation' }"
@@ -29,6 +23,19 @@
     </v-navigation-drawer>
 
     <v-main>
+      <v-toolbar density="compact" flat
+        style="background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-accent)))">
+        <v-app-bar-nav-icon color="white" @click="drawer = !drawer" />
+        <v-toolbar-title>
+          <v-select v-model="selectedProject" :items="projects" item-title="name" item-value="uuid" density="compact"
+            variant="solo" hide-details prepend-inner-icon="mdi-layers-outline"
+            style="min-width: 140px; max-width: 200px" @update:model-value="onProjectChange">
+          </v-select>
+        </v-toolbar-title>
+        <v-spacer />
+        <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
+      </v-toolbar>
+
       <router-view />
     </v-main>
   </v-app>
@@ -53,7 +60,6 @@ provide('projectId', selectedProject)
 onMounted(async () => {
   try {
     const res = await api.listProjects()
-    console.log('xxxxxxxxxxx', res)
     projects.value = res.projects
     selectInitialProject()
   } catch (e) {
@@ -82,9 +88,4 @@ function toggleTheme() {
   theme.global.name.value = theme.global.name.value === 'light' ? 'dark' : 'light'
 }
 
-function expandDrawer() {
-  if (!isMobile.value && !drawer.value) {
-    drawer.value = true
-  }
-}
 </script>

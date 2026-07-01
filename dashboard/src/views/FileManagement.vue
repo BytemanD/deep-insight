@@ -12,16 +12,8 @@
       {{ error }}
     </v-alert>
 
-    <v-data-table
-      :headers="headers"
-      :items="docs"
-      :loading="loading"
-      loading-text="加载中..."
-      no-data-text="暂无文档"
-      hover
-      density="compact"
-      class="doc-table"
-    >
+    <v-data-table :headers="headers" :items="docs" :loading="loading" loading-text="加载中..." no-data-text="暂无文档" hover
+      density="compact" class="doc-table">
       <template #item.name="{ item }">
         <div class="d-flex align-center">
           <v-icon icon="mdi-file-document-outline" class="mr-2" color="primary" />
@@ -69,17 +61,21 @@ onMounted(loadDocs)
   table-layout: fixed;
   width: 100%;
 }
+
 .doc-table :deep(colgroup) {
   display: none;
 }
+
 .doc-table :deep(th:first-child),
 .doc-table :deep(td:first-child) {
   width: auto;
 }
+
 .doc-table :deep(th:last-child),
 .doc-table :deep(td:last-child) {
   width: 160px;
 }
+
 .doc-name {
   word-break: break-all;
   line-height: 1.3;
