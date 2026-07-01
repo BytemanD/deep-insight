@@ -8,7 +8,7 @@ from loguru import logger
 from deep_insight.apps.vector.models import RetrivalDoc
 from deep_insight.common import context
 from deep_insight.common.conf import CONF
-from deep_insight.common.utils import file_sha256
+from deep_insight.db.models import Doc
 
 DEFAULT_COLLECTION_NAME = "DEFAULT"
 
@@ -25,23 +25,24 @@ class ChromadbDriver:
             name=collection_name or context.project_id.get() or DEFAULT_COLLECTION_NAME
         )
 
-    def import_file(self, file_path: str):
+    def import_file(self, doc: Doc):
         collection = self._get_collection()
+        file_path = doc.file_path
         logger.debug("read file: {} ...", file_path)
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
-        doc_id = file_sha256(file_path)
+        doc_id = doc.uuid
         logger.debug("document id: {}", doc_id)
-        docs = collection.get(doc_id)
-        if docs.get("ids"):
+        existing = collection.get(doc_id)
+        if existing.get("ids"):
             raise click.ClickException("document already exists")
 
         logger.debug("add document to project {} ...", collection.name)
         collection.add(
             ids=[doc_id],
             documents=[text],
-            metadatas=[{"file_name": Path(file_path).name}],
+            metadatas=[{"file_name": doc.name}],
         )
 
     def list_docs(self):

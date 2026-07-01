@@ -72,6 +72,21 @@ class API {
     return this.request('/docs')
   }
 
+  uploadDoc(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const projectId = localStorage.getItem('project_id')
+    const headers = {}
+    if (projectId) {
+      headers['X-Project-Id'] = projectId
+    }
+    return fetch(`${BASE}/docs/upload`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+  }
+
   listProjects() {
     return this.request('/projects')
   }

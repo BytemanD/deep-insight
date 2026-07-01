@@ -58,6 +58,13 @@ class Session(BaseSQLModel, table=True):
     name: str = Field(nullable=True)
 
 
+class Doc(BaseSQLModel, table=True):
+    name: str = Field(nullable=False)
+    file_size: int = Field(nullable=False)
+    file_path: str = Field(nullable=False)
+    status: str = Field(nullable=False, default="pending")
+
+
 def create_all_tables():
     logger.debug("create all tables")
     SQLModel.metadata.create_all(database.engine)

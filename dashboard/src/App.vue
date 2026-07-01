@@ -23,7 +23,7 @@
     </v-navigation-drawer>
 
     <v-main>
-      <v-toolbar density="compact" flat
+      <v-app-bar density="compact" flat
         style="background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-accent)))">
         <v-app-bar-nav-icon color="white" @click="drawer = !drawer" />
         <v-toolbar-title>
@@ -34,7 +34,7 @@
         </v-toolbar-title>
         <v-spacer />
         <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
-      </v-toolbar>
+      </v-app-bar>
 
       <router-view />
     </v-main>

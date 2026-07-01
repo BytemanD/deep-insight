@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from deep_insight.apps.vector.manager import get_vector_driver
-from deep_insight.db.models import Project, Session
+from deep_insight.db.models import Doc, Project, Session
 from deep_insight.research.ai import ResearchAI
 
 
@@ -20,7 +20,35 @@ class MasterManager:
         self.llm = ResearchAI()
 
     def list_docs(self):
-        return self.vector_driver.list_docs()
+        return Doc.query()
+
+    def upload_doc(self, filename: str, content: bytes):
+        from pathlib import Path
+
+        import click
+        from fastapi import HTTPException
+
+        raw_dir = Path("data/raw")
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        file_path = raw_dir / filename
+        file_path.write_bytes(content)
+
+        doc = Doc(
+            name=filename,
+            file_size=len(content),
+            file_path=str(file_path),
+            status="pending",
+        )
+        doc.create()
+
+        try:
+            self.vector_driver.import_file(doc)
+            doc.status = "parsed"
+            doc.update()
+        except click.ClickException as e:
+            doc.status = "failed"
+            doc.update()
+            raise HTTPException(status_code=409, detail=str(e))
 
     def create_project(self, name: str, description: Optional[str]):
         item = Project(name=name, description=description)
