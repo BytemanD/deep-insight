@@ -1,10 +1,10 @@
-from pathlib import Path
 from typing import Optional
 
 from fastapi import HTTPException
 from loguru import logger
 from pydantic import BaseModel
 
+from deep_insight.apps.storage.manager import get_storage_driver
 from deep_insight.apps.vector.manager import get_vector_driver
 from deep_insight.common import context
 from deep_insight.common.exceptions import DocAlreadyExists
@@ -21,6 +21,7 @@ class Message(BaseModel):
 class MasterManager:
     def __init__(self):
         self.vector_driver = get_vector_driver()
+        self.storage_driver = get_storage_driver()
         self.llm = ResearchAI()
 
     def list_docs(self):
@@ -30,32 +31,29 @@ class MasterManager:
         return Doc.query()
 
     def upload_doc(self, filename: str, content: bytes) -> Doc:
-        raw_dir = Path("data/raw")
-        raw_dir.mkdir(parents=True, exist_ok=True)
-        file_path = raw_dir / filename
-        file_path.write_bytes(content)
-
         doc = Doc(
             project_uuid=context.project_id.get() or "",
             name=filename,
             file_size=len(content),
-            file_path=str(file_path),
+            file_path="",
             status="pending",
         )
         doc.create()
+        self.storage_driver.save(doc, content)
         return doc
 
     def parse_doc(self, doc_uuid: str):
-        doc = Doc.get_by_uuid(doc_uuid)
+        doc: Optional[Doc] = Doc.get_by_uuid(doc_uuid)
         if not doc:
             logger.warning("parse_doc: doc {} not found, skip", doc_uuid)
             return
 
-        logger.info("parse_doc: start parsing doc {} ({})", doc.name, doc_uuid)
+        logger.info("parse_doc: start parsing doc {}({})", doc.name, doc_uuid)
         doc.status = "parsing"
         doc.update()
+        content = self.storage_driver.get_content(doc)
         try:
-            self.vector_driver.import_file(doc)
+            self.vector_driver.import_file(doc, content.decode("utf-8"))
             doc.status = "parsed"
             doc.update()
             logger.info("parse_doc: doc {} parsed successfully", doc_uuid)

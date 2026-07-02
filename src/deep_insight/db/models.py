@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from loguru import logger
@@ -26,7 +25,7 @@ class BaseSQLModel(SQLModel, table=False):
         return database.exec(stm)
 
     @classmethod
-    def get_by_uuid(cls, uuid: str) -> Optional["BaseSQLModel"]:
+    def get_by_uuid(cls, uuid: str):
         stm = select(cls).where(cls.uuid == uuid)
         return database.query_first(stm)
 
@@ -62,7 +61,7 @@ class Doc(BaseSQLModel, table=True):
     project_uuid: str = Field(nullable=False, index=True)
     name: str = Field(nullable=False)
     file_size: int = Field(nullable=False)
-    file_path: str = Field(nullable=False)
+    file_path: str = Field(nullable=True)
     status: str = Field(nullable=False, default="pending")
 
 

@@ -25,18 +25,15 @@ class ChromadbDriver:
             name=collection_name or context.project_id.get() or DEFAULT_COLLECTION_NAME
         )
 
-    def import_file(self, doc: Doc):
+    def import_file(self, doc: Doc, content: str):
         collection = self._get_collection()
         existing = collection.get(doc.uuid)
         if existing.get("ids"):
             raise DocAlreadyExists("document already exists")
 
-        with open(doc.file_path, "r", encoding="utf-8") as f:
-            text = f.read()
-
         collection.add(
             ids=[doc.uuid],
-            documents=[text],
+            documents=[content],
             metadatas=[{"file_name": doc.name}],
         )
 

@@ -32,3 +32,7 @@ def update(model: SQLModel):
         session.add(model)
         session.commit()
         session.refresh(model)
+
+
+def session():
+    return Session(engine)
