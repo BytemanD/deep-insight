@@ -40,7 +40,7 @@ def _to_response(d: Session) -> SessionResponse:
 @router.get("")
 async def list_sessions(x_project_id: str = Header(None)):
     logger.info("list sessions with project: {}", x_project_id)
-    sessions = Session.query(Session.project_uuid == x_project_id)
+    sessions = Session.get_by_project(x_project_id)
     return {"sessions": sessions}
 
 

@@ -21,38 +21,26 @@ export default createVuetify({
       light: {
         dark: false,
         colors: {
-          background: '#F8FAFC',
-          surface: '#FFFFFF',
-          'surface-bright': '#FFFFFF',
-          'surface-light': '#F1F5F9',
-          'surface-variant': '#E2E8F0',
-          'on-surface-variant': '#475569',
+          // 主色：用紫罗兰代替普蓝
           primary: '#7C3AED',
           'primary-darken-1': '#6D28D9',
-          secondary: '#0891B2',
-          'secondary-darken-1': '#0E7490',
-          accent: '#D946EF',
-          error: '#EF4444',
-          'error-darken-1': '#DC2626',
-          info: '#0EA5E9',
-          'info-darken-1': '#0284C7',
+
+          // 辅助色：活力珊瑚粉/橙
+          secondary: '#FF6B6B',
+
+          // 背景：带一点微紫的暖白，比纯白更柔和
+          background: '#FAF8FF',
+          surface: '#FFFFFF',
+
+          // 文字：深灰偏紫，比纯黑高级
+          'on-background': '#1E1B2E',
+          'on-surface': '#1E1B2E',
+
+          // 流行色点缀（可用于标签、徽章）
+          accent: '#00D2FF',
           success: '#10B981',
-          'success-darken-1': '#059669',
-          warning: '#F59E0B',
-          'warning-darken-1': '#D97706',
-        },
-        variables: {
-          'high-emphasis-opacity': 0.87,
-          'medium-emphasis-opacity': 0.60,
-          'disabled-opacity': 0.38,
-          'idle-opacity': 0.04,
-          'hover-opacity': 0.06,
-          'focus-opacity': 0.10,
-          'selected-opacity': 0.08,
-          'activated-opacity': 0.12,
-          'pressed-opacity': 0.14,
-          'dragged-opacity': 0.10,
-        },
+          error: '#F43F5E',
+        }
       },
       dark: {
         dark: true,

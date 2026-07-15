@@ -1,6 +1,6 @@
 <template>
   <v-row no-gutters class="fill-height">
-    <v-col cols="2" class="d-flex flex-column" style="border-right: 1px solid #e0e0e0;">
+    <v-col xl="1" lg="2" sm="3" class="d-flex flex-column" style="border-right: 1px solid #e0e0e0;">
       <div class="pa-3">
         <v-btn block color="primary" @click="createDialog" prepend-icon="mdi-plus">新建会话</v-btn>
       </div>
@@ -24,7 +24,8 @@
         请选择或创建一个会话
       </div>
       <template v-else>
-        <v-virtual-scroll ref="scrollRef" height="260px" class="pa-2" v-model="messages" :items="messages">
+        <v-virtual-scroll ref="scrollRef" height="260px" class="pa-2" v-model="messages" :items="messages"
+          id="conversation">
           <template v-slot:default="{ item, index }">
             <v-col v-if="item.role === 'user'" class="d-flex align-end flex-column">
               <div style="max-width: 70%;">
@@ -37,8 +38,7 @@
             <v-col v-else class="d-flex align-start flex-column">
               <div style="max-width: 70%; white-space: pre-wrap; word-break: break-all; overflow-x: visible;">
                 <!-- 思考过程 -->
-                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small" v-if="item.thinking"
-                  :model-value="item.content ? 1 : 0">
+                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small" v-if="item.thinking">
                   <v-expansion-panel>
                     <v-expansion-panel-title style="max-width: 500px" density="compact">
                       <span class="text-warning" v-if="!item.content && loading">思考中 ...</span>
@@ -159,6 +159,7 @@ async function selectDialog(d) {
   localStorage.setItem('session_id', d.uuid)
   let data = await API.getSessionMessages(d.uuid)
   messages.value = data.messages
+  proxyLinks()
 }
 
 async function send() {
@@ -209,8 +210,23 @@ function scrollToBottom() {
   }
 }
 
-onMounted(() => {
-  loadDialogs()
+function proxyLinks() {
+  console.log('proxy links ...')
+  document.getElementById('conversation').addEventListener('click', function (e) {
+    // 检查点击的是否是 a 标签
+    const link = e.target.closest('a');
+    if (!link) return;
+    // 阻止默认跳转
+    e.preventDefault();
+    // 获取文件链接
+    const fileUrl = link.getAttribute('href');
+    console.log('download', fileUrl)
+    window.open(`/api/v1/docs/download?path=${fileUrl}`, '_blank')
+  });
+}
+
+onMounted(async () => {
+  await loadDialogs()
 })
 
 watch(projectId, (newVal, oldVal) => {

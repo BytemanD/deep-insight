@@ -22,20 +22,20 @@
       </v-list>
     </v-navigation-drawer>
 
+    <v-app-bar density="compact"
+      style="background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-accent)));">
+      <v-app-bar-nav-icon color="white" @click="drawer = !drawer" />
+      <v-select v-model="selectedProject" :items="projects" item-title="name" item-value="uuid" density="compact"
+        variant="solo" hide-details prepend-inner-icon="mdi-layers-outline" style="min-width: 140px; max-width: 200px"
+        @update:model-value="onProjectChange">
+      </v-select>
+      <v-toolbar-title>
+      </v-toolbar-title>
+      <v-btn icon="mdi-plus" @click="projectDialog = true" />
+      <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
+    </v-app-bar>
     <v-main>
-      <v-app-bar density="compact" flat
-        style="background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-accent)))">
-        <v-app-bar-nav-icon color="white" @click="drawer = !drawer" />
-        <v-toolbar-title>
-          <v-select v-model="selectedProject" :items="projects" item-title="name" item-value="uuid" density="compact"
-            variant="solo" hide-details prepend-inner-icon="mdi-layers-outline"
-            style="min-width: 140px; max-width: 200px" @update:model-value="onProjectChange">
-          </v-select>
-        </v-toolbar-title>
-        <v-btn icon="mdi-plus" @click="projectDialog = true" />
-        <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
-      </v-app-bar>
-
+      <!-- 主页面 -->
       <router-view :key="selectedProject" />
 
       <v-dialog v-model="projectDialog" max-width="400">

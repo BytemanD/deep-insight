@@ -31,6 +31,7 @@ class ChromadbDriver:
         if existing.get("ids"):
             raise DocAlreadyExists("document already exists")
 
+        logger.info("add doc {} to collection {}", doc.file_path, collection.name)
         collection.add(
             ids=[doc.uuid],
             documents=[content],

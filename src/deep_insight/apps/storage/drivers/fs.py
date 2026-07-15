@@ -1,5 +1,4 @@
 import os
-import uuid
 from pathlib import Path
 
 from loguru import logger
@@ -14,7 +13,7 @@ class FSDriver:
         self.path.mkdir(parents=True, exist_ok=True)
 
     def save(self, doc: Doc, content: bytes):
-        doc.file_path = str(Path(doc.project_uuid, f"{uuid.uuid4()}_{doc.name}"))
+        doc.file_path = str(Path(doc.project_uuid or "default", doc.name))
 
         abs_path = self.path / doc.file_path
         abs_path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,3 +36,6 @@ class FSDriver:
     def get_content(self, doc: Doc):
         abs_path = self.path / doc.file_path
         return abs_path.read_bytes()
+
+    def get_path(self, doc: Doc):
+        return self.path / doc.file_path

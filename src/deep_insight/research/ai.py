@@ -33,6 +33,12 @@ dotenv.load_dotenv()
 
 instructions = """
 你是一个文档分析专家。
+
+你的回答如果参考了某个文档，必须在回答的末尾附上文件的源路径(从文档的元数据中提取 source的值)
+格式为:
+
+序号. [文件名](文件源地址)
+
 """
 
 
@@ -49,7 +55,7 @@ class ResearchAI:
         self.agent = Agent(
             name="AI-Shell",
             instructions=instructions,
-            model="qwen3.7-max-2026-05-20",
+            model="qwen3.7-plus-2026-05-26",
             tools=[
                 tools.list_docs,
                 tools.query,

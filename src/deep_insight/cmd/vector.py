@@ -46,7 +46,7 @@ def query(text: str):
 @app.command()
 @click.argument("source")
 def ingest(source: str):
-    """ingest HTML doc from file/url"""
+    """ingest doc from file/url"""
 
     if source.startswith("http"):
         doc_path = static.COLLECTOR.collect(source)

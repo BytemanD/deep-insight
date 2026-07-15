@@ -1,4 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, File, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 
 from deep_insight.apps.master.manager import MANAGER
 
@@ -20,3 +21,15 @@ async def upload_doc(
     doc = MANAGER.upload_doc(file.filename, content)
     background_tasks.add_task(MANAGER.parse_doc, doc.uuid)
     return {"message": "ok"}
+
+
+@router.get("/download")
+async def download_doc(
+    path: str,
+):
+    if not path:
+        return JSONResponse(status_code=400, content={"path is required"})
+    file_path = MANAGER.get_doc_path(path)
+    if not file_path:
+        return JSONResponse(status_code=404, content={"file not found"})
+    return FileResponse(file_path)

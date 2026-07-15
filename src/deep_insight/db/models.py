@@ -2,7 +2,8 @@ from datetime import datetime
 from uuid import uuid4
 
 from loguru import logger
-from sqlmodel import Field, SQLModel, delete, select
+from sqlalchemy import desc
+from sqlmodel import Field, Sequence, SQLModel, delete, select
 
 from deep_insight.db import database
 
@@ -55,6 +56,15 @@ class Project(BaseSQLModel, table=True):
 class Session(BaseSQLModel, table=True):
     project_uuid: str = Field(nullable=False, index=True)
     name: str = Field(nullable=True)
+
+    @classmethod
+    def get_by_project(cls, project_id: str) -> Sequence["Session"]:
+        stm = (
+            select(cls)
+            .filter(cls.project_uuid == project_id)
+            .order_by(desc(cls.created_at))
+        )
+        return database.exec(stm)
 
 
 class Doc(BaseSQLModel, table=True):

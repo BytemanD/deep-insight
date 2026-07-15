@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import HTTPException
 from loguru import logger
+from markitdown import MarkItDown
 from pydantic import BaseModel
 
 from deep_insight.apps.storage.manager import get_storage_driver
@@ -30,7 +31,16 @@ class MasterManager:
             return Doc.query(Doc.project_uuid == pid)
         return Doc.query()
 
+    def get_doc_path(self, path: str):
+        logger.info("get doc path: {}", path)
+        docs = Doc.query(Doc.file_path == path)
+        if not docs:
+            return None
+        return self.storage_driver.get_path(docs[0])
+
     def upload_doc(self, filename: str, content: bytes) -> Doc:
+        """创建 doc 记录， 保存 doc 内容到本地存储"""
+
         doc = Doc(
             project_uuid=context.project_id.get() or "",
             name=filename,
@@ -51,9 +61,8 @@ class MasterManager:
         logger.info("parse_doc: start parsing doc {}({})", doc.name, doc_uuid)
         doc.status = "parsing"
         doc.update()
-        content = self.storage_driver.get_content(doc)
         try:
-            self.vector_driver.import_file(doc, content.decode("utf-8"))
+            self.vector_driver.import_file(doc, self._convert(doc))
             doc.status = "parsed"
             doc.update()
             logger.info("parse_doc: doc {} parsed successfully", doc_uuid)
@@ -65,6 +74,29 @@ class MasterManager:
             logger.exception("parse_doc: doc {} parse failed", doc_uuid)
             doc.status = "failed"
             doc.update()
+
+    def import_doc(self, doc: Doc):
+        collection = self.vector_driver.import_file()
+        storage_driver = get_storage_driver()
+        storage_driver.get_content(doc)
+        existing = collection.get(doc.uuid)
+        if existing.get("ids"):
+            raise DocAlreadyExists("document already exists")
+
+        collection.add(
+            ids=[doc.uuid],
+            documents=[self._convert(doc)],
+            metadatas=[{"file_name": doc.name}],
+        )
+
+    def _convert(self, doc: Doc):
+        if not doc.file_path:
+            raise ValueError("doc file_path is required")
+        md = MarkItDown()
+
+        logger.info("convert doc: {}", doc)
+        result = md.convert(self.storage_driver.get_path(doc))
+        return f"---\nsource: {doc.file_path}\n---\n\n{result.text_content}"
 
     def create_project(self, name: str, description: Optional[str]):
         item = Project(name=name, description=description)
