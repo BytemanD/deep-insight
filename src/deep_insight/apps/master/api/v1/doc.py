@@ -32,4 +32,4 @@ async def download_doc(
     file_path = MANAGER.get_doc_path(path)
     if not file_path:
         return JSONResponse(status_code=404, content={"file not found"})
-    return FileResponse(file_path)
+    return FileResponse(file_path, filename=file_path.name)

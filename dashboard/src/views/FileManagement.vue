@@ -35,14 +35,14 @@
       <v-card>
         <v-card-title>上传文档</v-card-title>
         <v-card-text>
-          <v-file-input v-model="file" label="选择文件" accept=".txt,.md,.json,.csv,.xml,.yaml,.yml" show-size
-            :disabled="uploading" :rules="[fileSizeRule]" @update:model-value="fileError = ''" />
+          <v-file-input v-model="file" label="选择文件"
+            accept=".txt,.md,.json,.csv,.xml,.yaml,.yml,.pdf,.doc,.docx,.ppt,.xls" show-size :disabled="uploading"
+            :rules="[fileSizeRule]" @update:model-value="fileError = ''" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dialog = false" :disabled="uploading">取消</v-btn>
-          <v-btn color="primary" variant="elevated" :loading="uploading" :disabled="!canUpload"
-            @click="uploadFile">
+          <v-btn color="primary" variant="elevated" :loading="uploading" :disabled="!canUpload" @click="uploadFile">
             上传
           </v-btn>
         </v-card-actions>
