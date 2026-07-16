@@ -3,7 +3,11 @@ from typing import Optional
 from sqlalchemy import Select
 from sqlmodel import Sequence, Session, SQLModel, create_engine
 
-engine = create_engine("sqlite:///data/deepinsight.db")
+engine = create_engine("sqlite:///data/deepinsight.db", echo=True)
+
+
+def get_session():
+    return Session(engine)
 
 
 def exec(statement) -> Optional[Sequence]:

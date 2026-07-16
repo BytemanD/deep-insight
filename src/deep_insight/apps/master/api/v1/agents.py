@@ -9,6 +9,7 @@ router = APIRouter(prefix="/agents")
 
 class QueryRequest(BaseModel):
     text: str
+    model: str = ""
 
 
 @router.post("/{session_id}/chat")
@@ -18,7 +19,7 @@ async def query(
 ):
     async def event_stream():
         async for chunk in MANAGER.streaming_llm_query(
-            req.text, session_id=session_id
+            req.text, session_id=session_id, model=req.model
         ):
             yield chunk
 

@@ -110,7 +110,7 @@ class API {
       body: JSON.stringify({ text }),
     })
   }
-  queryStream(text, onChunk, onDone, onError) {
+  queryStream(text, model, onChunk, onDone, onError) {
     const projectId = localStorage.getItem('project_id') || ''
     let sessionId = localStorage.getItem('session_id')
     const headers = {
@@ -120,7 +120,7 @@ class API {
     fetch(`${BASE}/agents/${sessionId}/chat`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, model }),
     }).then(async (res) => {
       if (!res.ok) {
         const msg = await res.text().catch(() => res.statusText)
@@ -174,6 +174,10 @@ class API {
       method: 'POST',
       body: JSON.stringify({ project_uuid: projectUuid, name }),
     })
+  }
+
+  listModels() {
+    return this.request('/models')
   }
 
   deleteSession(uuid) {

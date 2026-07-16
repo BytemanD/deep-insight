@@ -26,9 +26,18 @@ class BaseSQLModel(SQLModel, table=False):
         return database.exec(stm)
 
     @classmethod
+    def query_first(cls, *criterion, **filters):
+        stm = select(cls)
+        if criterion:
+            stm = stm.filter(*criterion)
+        elif filters:
+            stm = stm.filter_by(**filters)
+        with database.get_session() as session:
+            return session.exec(stm).first()
+
+    @classmethod
     def get_by_uuid(cls, uuid: str):
-        stm = select(cls).where(cls.uuid == uuid)
-        return database.query_first(stm)
+        return cls.query_first(cls.uuid == uuid)
 
     def update(self):
         database.update(self)
@@ -36,7 +45,11 @@ class BaseSQLModel(SQLModel, table=False):
     def delete(self):
         """创建新记录到数据库, id 已存在则抛出异常"""
         stm = delete(self.__class__).where(self.__class__.uuid == self.uuid)
-        database.exec(stm)
+
+        logger.debug("delete {} {}", self.__class__, self.uuid)
+        with database.get_session() as session:
+            session.exec(stm)
+            session.commit()
 
     def create(self):
         """创建新记录到数据库, id 已存在则抛出异常"""

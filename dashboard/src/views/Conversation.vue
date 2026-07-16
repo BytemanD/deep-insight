@@ -2,10 +2,11 @@
   <v-row no-gutters class="fill-height">
     <v-col xl="1" lg="2" sm="3" class="d-flex flex-column" style="border-right: 1px solid #e0e0e0;">
       <div class="pa-3">
-        <v-btn block color="primary" @click="createDialog" rounded prepend-icon="mdi-plus">新建会话</v-btn>
+        <v-btn block color="primary" size="large" @click="createDialog" rounded prepend-icon="mdi-plus">新建会话</v-btn>
       </div>
+      <div class="pa-2 text-caption text-medium-emphasis text-center">{{ dialogs.length }} 个会话</div>
       <v-divider></v-divider>
-      <v-virtual-scroll :items="dialogs" height="100">
+      <v-virtual-scroll :items="dialogs" height="100" class="sidebar-scroll">
         <template v-slot:default="{ item }">
           <v-list-item :title="item.name || '未命名会话'" :subtitle="formatTime(item.created_at)"
             :active="selectedDialog?.uuid === item.uuid" @click="selectDialog(item)"
@@ -16,10 +17,8 @@
           </v-list-item>
         </template>
       </v-virtual-scroll>
-      <v-divider></v-divider>
-      <div class="pa-2 text-caption text-medium-emphasis text-center">{{ dialogs.length }} 个会话</div>
     </v-col>
-    <v-col class="d-flex flex-column">
+    <v-col class="d-flex flex-column" xl="11" lg="10" sm="9">
       <div v-if="!selectedDialog" class="d-flex align-center justify-center flex-grow-1 text-medium-emphasis">
         请选择或创建一个会话
       </div>
@@ -38,7 +37,7 @@
             <v-col v-else class="d-flex align-start flex-column">
               <div style="max-width: 70%; word-break: break-all; overflow-x: visible;">
                 <!-- 思考过程 -->
-                <v-expansion-panels class="mb-4 border-s-lg" elevation="0" size="small" v-if="item.thinking">
+                <v-expansion-panels class="mb-1 border-s-lg" elevation="0" v-if="item.thinking">
                   <v-expansion-panel>
                     <v-expansion-panel-title style="" density="compact">
                       <span class="text-warning" v-if="!item.content && loading">思考中</span>
@@ -56,9 +55,11 @@
                     </v-expansion-panel-text>
                   </v-expansion-panel>
                 </v-expansion-panels>
-
-                <v-card class="rounded-ts-0 px-4" variant="tonal" rounded="xl" v-if="item.content" max-width="600">
-                  <v-card-text v-html="marked(item.content)">
+                <v-card v-if="item.content" class="rounded-ts-0 px-2" variant="tonal" rounded="xl">
+                  <v-alert v-if="item.type === 'error'" variant="text" type="error" density="compact">
+                    {{ item.content }}
+                  </v-alert>
+                  <v-card-text v-else v-html="marked(item.content)">
                   </v-card-text>
                 </v-card>
 
@@ -76,14 +77,23 @@
 
         </v-virtual-scroll>
 
-        <v-footer class="py-4 px-10" height="auto" style="flex: 0 0 auto;">
-          <v-textarea v-model="input" variant="outlined" placeholder="随便问点什么(Enter 发送, Shift+Enter 换行)..." hide-details
-            :disabled="loading || !selectedDialog" @keydown.enter="onEnter" rows="2" auto-grow :max-rows="4">
-            <template #append-inner>
-              <v-btn icon="mdi-send" variant="text" color="primary" :loading="loading" :disabled="!input.trim()"
-                @click="send" class="pl-4" />
-            </template>
-          </v-textarea>
+        <v-footer class="pb-1  px-10" height="auto" style="flex: 0 0 auto;">
+          <v-col>
+            <v-textarea v-model="input" variant="outlined" placeholder="随便问点什么(Enter 发送, Shift+Enter 换行)..."
+              hide-details :disabled="loading || !selectedDialog" @keydown.enter="onEnter" rows="2" auto-grow
+              :max-rows="4" class="pa-4 pb-0">
+              <template #append-inner>
+                <v-btn icon="mdi-send" variant="text" color="primary" :loading="loading" :disabled="!input.trim()"
+                  @click="send" class="pl-4" />
+              </template>
+            </v-textarea>
+            <div class="d-flex flex-row-reverse mb-1 px-4" style="width: 100%;">
+              <v-sheet>
+                <v-select v-model="selectedModel" :items="models" item-title="label" item-value="value"
+                  density="compact" variant="text" hide-details class="model-selector" />
+              </v-sheet>
+            </div>
+          </v-col>
         </v-footer>
       </template>
     </v-col>
@@ -110,6 +120,21 @@ const dialogs = ref([])
 const selectedDialog = ref(null)
 const showTooltip = ref(true)
 const lastLLmMsg = ref({ role: 'assistant', content: '' })
+
+const models = ref([])
+const selectedModel = ref(localStorage.getItem('selected_model') || '')
+
+async function loadModels() {
+  try {
+    const res = await API.listModels()
+    models.value = res.models || []
+    if (!selectedModel.value && models.value.length) {
+      selectedModel.value = models.value[0].value
+    }
+  } catch (e) {
+    console.error('Failed to load models', e)
+  }
+}
 
 
 function formatTime(iso) {
@@ -184,8 +209,10 @@ async function send() {
   messages.value.push({ role: 'assistant', content: '', thinking: '' })
 
   let hasError = false
+  localStorage.setItem('selected_model', selectedModel.value)
   await API.queryStream(
     text,
+    selectedModel.value,
     (chunk, type) => {
       if (type === 'thinking') {
         messages.value[messages.value.length - 1].thinking += chunk
@@ -198,10 +225,11 @@ async function send() {
       loading.value = false
       scrollToBottom()
     },
-    (error) => {
+    (error, type) => {
       if (!hasError) {
         hasError = true
-        messages.value[messages.value.length - 1].content = `错误: ${error}`
+        messages.value[messages.value.length - 1].content = error
+        messages.value[messages.value.length - 1].type = type || 'error'
         loading.value = false
         scrollToBottom()
       }
@@ -232,6 +260,7 @@ function proxyLinks() {
 }
 
 onMounted(async () => {
+  await loadModels()
   await loadDialogs()
 })
 
@@ -273,9 +302,46 @@ watch(projectId, (newVal, oldVal) => {
   margin: -6px;
 }
 
+.toolbar {
+  border-top: 1px solid rgba(var(--v-border-color), 0.3);
+  background: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+.model-selector {
+  min-width: 140px;
+}
+
+:deep(.model-selector .v-field) {
+  min-height: 28px;
+}
+
+:deep(.model-selector .v-field__input) {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: 0.75rem;
+  min-height: 24px;
+}
+
 #conversation ::-webkit-scrollbar {
   width: 0px;
   height: 0px;
+}
+
+/* .sidebar-scroll {
+  scrollbar-width: thin;
+} */
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 2px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 :deep(.v-textarea textarea::-webkit-scrollbar) {

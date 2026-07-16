@@ -124,13 +124,6 @@ class MasterManager:
         item.create()
         return item
 
-    def delete_session(self, uuid: str):
-        db_dialog = Session.get_by_uuid(uuid)
-        if not db_dialog:
-            raise Exception(f"Session {uuid} not found")
-
-        db_dialog.delete()
-
     def retrival(self, text: str):
         return self.vector_driver.query(text)
 
@@ -166,9 +159,16 @@ class MasterManager:
                     )
         return messages
 
-    async def streaming_llm_query(self, text: str, session_id: str = None):
+    async def streaming_llm_query(
+        self, text: str, session_id: str = None, model: str = ""
+    ):
+        if model:
+            self.llm.set_model(model)
         async for chunk in self.llm.streaming_query(text, session_id=session_id):
             yield f"data: {chunk}\n\n"
+
+    def get_models(self):
+        return self.llm.list_model()
 
 
 MANAGER = MasterManager()

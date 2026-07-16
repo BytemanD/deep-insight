@@ -75,7 +75,7 @@ async def update_session(uuid: str, body: SessionUpdate):
 
 @router.delete("/{session_id}", status_code=204)
 async def delete_session(session_id: str):
-    MANAGER.delete_session(session_id)
+    await MANAGER.delete_session(session_id)
 
 
 @router.get("/{session_id}/messages")
